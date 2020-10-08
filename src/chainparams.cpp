@@ -84,6 +84,7 @@ public:
         consensus.nPowTargetSpacing = 2.5 * 60;
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = false;
+        consensus.nPowDGWHeight = 135295; // GDW block height
         consensus.nRuleChangeActivationThreshold = 6048; // 75% of 8064
         consensus.nMinerConfirmationWindow = 8064; // nPowTargetTimespan / nPowTargetSpacing * 4
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
@@ -124,11 +125,7 @@ public:
         assert(genesis.hashMerkleRoot == uint256S("0x51aa79fd2875024e59a091610540cfd80557835e0bb455dda0c3d6c4880a9a4d"));
 
         // Note that of those with the service bits flag, most only support a subset of possible options
-        // vSeeds.emplace_back("seed-a.bixbcoin.loshan.co.uk", true);
-        // vSeeds.emplace_back("dnsseed.thrasher.io", true);
-        // vSeeds.emplace_back("dnsseed.bixbcointools.com", true);
-        // vSeeds.emplace_back("dnsseed.bixbcoinpool.org", true);
-        // vSeeds.emplace_back("dnsseed.koin-project.com", false);
+        vSeeds.emplace_back("bixbcoin.com", false);
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,25);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);
@@ -176,6 +173,7 @@ public:
         consensus.nPowTargetSpacing = 2.5 * 60;
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = false;
+        consensus.nPowDGWHeight = 50; 
         consensus.nRuleChangeActivationThreshold = 1512; // 75% for testchains
         consensus.nMinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
@@ -196,7 +194,7 @@ public:
         consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000007d006a402163e");
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0xdf301db0f2644f2876e907b3d616896c824d58060b625b317837e6775982c07c"); //343833
+        consensus.defaultAssumeValid = uint256S("0xa40ffedfe5435eab4eca8aa9fae5b90c26b5bc5f86d7ed557c38e3e11cabd47f"); //343833
 
         pchMessageStart[0] = 0xfd;
         pchMessageStart[1] = 0xd2;
@@ -233,12 +231,12 @@ public:
 
         checkpointData = (CCheckpointData) {
             {
-                {0, uint256S("df301db0f2644f2876e907b3d616896c824d58060b625b317837e6775982c07c")},
+                {0, uint256S("a40ffedfe5435eab4eca8aa9fae5b90c26b5bc5f86d7ed557c38e3e11cabd47f")},
             }
         };
 
         chainTxData = ChainTxData{
-            // Data as of block a0afbded94d4be233e191525dc2d467af5c7eab3143c852c3cd549831022aad6 (height 343833)
+            // Data as of block a40ffedfe5435eab4eca8aa9fae5b90c26b5bc5f86d7ed557c38e3e11cabd47f (height 0)
             1582822846,
             0,
             0.01
@@ -264,6 +262,7 @@ public:
         consensus.nPowTargetSpacing = 2.5 * 60;
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = true;
+        consensus.nPowDGWHeight = 50; 
         consensus.nRuleChangeActivationThreshold = 108; // 75% for testchains
         consensus.nMinerConfirmationWindow = 144; // Faster than normal for regtest (144 instead of 2016)
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
@@ -303,7 +302,7 @@ public:
 
         checkpointData = (CCheckpointData) {
             {
-                {0, uint256S("df301db0f2644f2876e907b3d616896c824d58060b625b317837e6775982c07c")},
+                {0, uint256S("a40ffedfe5435eab4eca8aa9fae5b90c26b5bc5f86d7ed557c38e3e11cabd47f")},
             }
         };
 
