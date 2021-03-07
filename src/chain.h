@@ -194,6 +194,9 @@ public:
     //! (memory only) Total amount of work (expected number of hashes) in the chain up to and including this block
     arith_uint256 nChainWork;
 
+    //! delay count for delay penalty
+    int nChainDelay;
+
     //! Number of transactions in this block.
     //! Note: in a potential headers-first mode, this number cannot be relied upon
     unsigned int nTx;
@@ -229,6 +232,9 @@ public:
         nDataPos = 0;
         nUndoPos = 0;
         nChainWork = arith_uint256();
+        
+        nChainDelay = 0;
+        
         nTx = 0;
         nChainTx = 0;
         nStatus = 0;

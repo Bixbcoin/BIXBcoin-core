@@ -12,7 +12,6 @@
 
 #include <stdint.h>
 
-
 namespace Checkpoints {
 
     CBlockIndex* GetLastCheckpoint(const CCheckpointData& data)
