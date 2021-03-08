@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Bitcoin Core developers
+// Copyright (c) 2021 The Bixbcoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -48,6 +49,8 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/thread.hpp>
+
+#include <delay.h>
 
 #if defined(NDEBUG)
 # error "Bixbcoin cannot be compiled without assertions."
@@ -2031,7 +2034,7 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
     // New best block
     mempool.AddTransactionsUpdated(1);
 
-    double syncProgress = Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), chainActive.Tip());
+    double syncProgress = GuessVerificationProgress(chainParams.TxData(), chainActive.Tip());
 	if(fIsStartupSyncing && std::abs(1.0 - syncProgress) < 0.000001) {
     	LogPrintf("Fully synchronized at block height %d\n", chainActive.Height());
     	fIsStartupSyncing = false;
@@ -2077,7 +2080,7 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
       chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(), chainActive.Tip()->nVersion,
       log(chainActive.Tip()->nChainWork.getdouble())/log(2.0), (unsigned long)chainActive.Tip()->nChainTx,
       DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),
-      syncProgress, chainActive.Tip()), pcoinsTip->DynamicMemoryUsage() * (1.0 / (1<<20)), pcoinsTip->GetCacheSize());
+      syncProgress, pcoinsTip->DynamicMemoryUsage() * (1.0 / (1<<20)), pcoinsTip->GetCacheSize());
     if (!warningMessages.empty())
         LogPrintf(" warning='%s'", boost::algorithm::join(warningMessages, ", "));
     LogPrintf("\n");

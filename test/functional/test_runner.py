@@ -124,6 +124,8 @@ BASE_SCRIPTS= [
     'resendwallettransactions.py',
     'minchainwork.py',
     'p2p-acceptblock.py',
+    'p2p-invalid_block.py',
+    'blockdelay.py',
 ]
 
 EXTENDED_SCRIPTS = [

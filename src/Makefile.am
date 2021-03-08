@@ -156,6 +156,7 @@ BITCOIN_CORE_H = \
   utilmoneystr.h \
   utiltime.h \
   validation.h \
+  delay.h \
   validationinterface.h \
   versionbits.h \
   wallet/coincontrol.h \
@@ -217,6 +218,7 @@ libbitcoin_server_a_SOURCES = \
   txmempool.cpp \
   ui_interface.cpp \
   validation.cpp \
+  delay.cpp \
   validationinterface.cpp \
   versionbits.cpp \
   $(BITCOIN_CORE_H)
@@ -307,8 +309,7 @@ libbitcoin_consensus_a_SOURCES = \
   uint256.h \
   utilstrencodings.cpp \
   utilstrencodings.h \
-  version.h \
-  delay.cpp
+  version.h
 
 
 # common: shared between bitcoind, and bitcoin-qt and non-server tools
