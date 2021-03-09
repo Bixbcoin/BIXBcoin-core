@@ -1300,13 +1300,13 @@ UniValue getchaintips(const JSONRPCRequest& request)
             status = "invalid";
         } else if (block->nChainTx == 0) {
             // This block cannot be connected because full block data for it or one of its parents is missing.
-            status = "headers-only";
+            status = "headers-only (delay=" + std::to_string(block->nChainDelay) + ")";
         } else if (block->IsValid(BLOCK_VALID_SCRIPTS)) {
             // This block is fully validated, but no longer part of the active chain. It was probably the active block once, but was reorganized.
-            status = "valid-fork";
+            status = "valid-fork (delay=" + std::to_string(block->nChainDelay) + ")";
         } else if (block->IsValid(BLOCK_VALID_TREE)) {
             // The headers for this block are valid, but it has not been validated. It was probably never part of the most-work chain.
-            status = "valid-headers";
+            status = "valid-headers (delay=" + std::to_string(block->nChainDelay) + ")";
         } else {
             // No clue.
             status = "unknown";
