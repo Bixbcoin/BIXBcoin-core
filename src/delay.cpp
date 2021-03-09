@@ -1,8 +1,7 @@
 #include "delay.h"
 
-int GetBlockDelay(const CBlockIndex& newBlock, const CBlockIndex& prevBlock, const int activeChainHeight, const bool isStartupSyncing)
+int64_t GetBlockDelay(const CBlockIndex& newBlock, const CBlockIndex& prevBlock, const int activeChainHeight, const bool isStartupSyncing)
 {
-    const int PENALTY_THRESHOLD = 5;
 
     if(isStartupSyncing) {
     	return 0;
@@ -34,9 +33,4 @@ int GetBlockDelay(const CBlockIndex& newBlock, const CBlockIndex& prevBlock, con
             return 0;
         }
     }
-}
-
-bool IsChainPenalised(const CChain& chain)
-{
-    return (chain.Tip()->nChainDelay < 0);
 }

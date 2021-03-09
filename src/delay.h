@@ -9,5 +9,6 @@
 #include "tinyformat.h"
 #include <boost/foreach.hpp>
 
-int GetBlockDelay (const CBlockIndex& newBlock,const CBlockIndex& prevBlock, const int activeChainHeight, bool isStartupSyncing);
-bool IsChainPenalised (const CChain& chain);
+static const int PENALTY_THRESHOLD = 5;
+
+int64_t GetBlockDelay (const CBlockIndex& newBlock,const CBlockIndex& prevBlock, const int activeChainHeight, bool isStartupSyncing);
