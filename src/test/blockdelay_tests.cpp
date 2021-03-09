@@ -1,7 +1,17 @@
+#include "delay.h"
+#include "chain.h"
+#include "chainparams.h"
+#include "pow.h"
+#include "random.h"
+#include "util.h"
 #include "test/test_bitcoin.h"
-#include <delay.h> 
+#include "validation.h"
 
-TEST(delay_tests, get_block_delay) {
+#include <boost/test/unit_test.hpp>
+
+BOOST_FIXTURE_TEST_SUITE(blockdelay_tests, BasicTestingSetup)
+
+BOOST_AUTO_TEST_CASE(GetBlock_delay) {
     CBlockIndex *block = new CBlockIndex();
     CBlockIndex *pblock = new CBlockIndex();
 
@@ -14,25 +24,26 @@ TEST(delay_tests, get_block_delay) {
     indexNew.nHeight = 100;
     indexPrev.nChainDelay = 0;
     int activeChainHeight = 100; 
-    ASSERT_EQ (GetBlockDelay(indexNew, indexPrev, activeChainHeight, false), 0);
+    BOOST_CHECK(GetBlockDelay(indexNew, indexPrev, activeChainHeight, false) == 0);
 
     
     indexNew.nHeight = 5;
     indexPrev.nChainDelay = 0;
     activeChainHeight = 16;
-    ASSERT_EQ (GetBlockDelay(indexNew, indexPrev, activeChainHeight, false), 11);
+    BOOST_CHECK(GetBlockDelay(indexNew, indexPrev, activeChainHeight, false) == 11);
 
 
     // some delay in the current chain
     indexNew.nHeight = 100 ;
     indexPrev.nChainDelay = 20 ;
     activeChainHeight = 500; 
-    ASSERT_EQ (GetBlockDelay(indexNew, indexPrev, activeChainHeight, false), 400);
+    BOOST_CHECK(GetBlockDelay(indexNew, indexPrev, activeChainHeight, false) == 400);
 
 
     indexNew.nHeight = 6;
     indexPrev.nChainDelay = 11;
     activeChainHeight = 16;
-    ASSERT_EQ (GetBlockDelay(indexNew, indexPrev, activeChainHeight, false), 10);
-
+    BOOST_CHECK(GetBlockDelay(indexNew, indexPrev, activeChainHeight, false) == 10);
 }
+
+BOOST_AUTO_TEST_SUITE_END()
