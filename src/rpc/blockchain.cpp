@@ -1559,10 +1559,10 @@ UniValue getblockfinalityindex(const JSONRPCRequest& request)
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't tell finality of a block not on main chain");
     }
 
-    std::set<const CBlockIndex*, CompareBlocksByHeight> setTips;
-    for (auto mapPair : mGlobalForkTips)
+    std::set<const CBlockIndex*, CompareBlocksByHeight> setTips;    
+    for (const std::pair<const uint256, CBlockIndex*>& mapPair : mapBlockIndex)
     {
-        const CBlockIndex* idx = mapPair.first;
+        const CBlockIndex* idx = mapPair.second;
         setTips.insert(idx);
     }
     setTips.insert(chainActive.Tip());
