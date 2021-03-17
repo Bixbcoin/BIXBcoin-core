@@ -1204,20 +1204,7 @@ UniValue getblockchaininfo(const JSONRPCRequest& request)
     return obj;
 }
 
-/** Comparison function for sorting the getchaintips heads.  */
-struct CompareBlocksByHeight
-{
-    bool operator()(const CBlockIndex* a, const CBlockIndex* b) const
-    {
-        /* Make sure that unequal blocks with the same height do not compare
-           equal. Use the pointers themselves to make a distinction. */
 
-        if (a->nHeight != b->nHeight)
-          return (a->nHeight > b->nHeight);
-
-        return a < b;
-    }
-};
 
 UniValue getchaintips(const JSONRPCRequest& request)
 {
@@ -1550,52 +1537,57 @@ UniValue getblockfinalityindex(const JSONRPCRequest& request)
 
     uint256 hash = ParseHashV(request.params[0], "parameter 1");
 
-        if (mapBlockIndex.count(hash) == 0)
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
+    if (mapBlockIndex.count(hash) == 0)
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No such block header");
+
+    if (hash == Params().GetConsensus().hashGenesisBlock)
+        throw JSONRPCError(RPC_INVALID_PARAMS, "Finality does not apply to genesis block");
 
     CBlockIndex* pblkIndex = mapBlockIndex[hash];
 
     if (fHavePruned && !(pblkIndex->nStatus & BLOCK_HAVE_DATA) && pblkIndex->nTx > 0)
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
+    /*
+    *  CBlock block;
+    *  if(!ReadBlockFromDisk(block, pblkIndex))
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk (header only)");
+    */
 
-    CBlock block;
-    if(!ReadBlockFromDisk(block, pblkIndex,Params().GetConsensus()))
-        throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
-
-    // 0. if the input does not belong to the main chain can not ctell finality
+    // 0. if the input does not belong to the main chain can not tell finality
     if (!chainActive.Contains(pblkIndex))
     {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't tell finality of a block not on main chain");
     }
 
-    // find possible forks
-    //-------------------------------------------------------------------------
-    // TODO keep a repo up to date
     std::set<const CBlockIndex*, CompareBlocksByHeight> setTips;
-    for (const std::pair<const uint256, CBlockIndex*>& item : mapBlockIndex)
+    for (auto mapPair : mGlobalForkTips)
     {
-        setTips.insert(item.second);
+        const CBlockIndex* idx = mapPair.first;
+        setTips.insert(idx);
     }
-    for (const std::pair<const uint256, CBlockIndex*>& item : mapBlockIndex)
-    {
-        const CBlockIndex* pprev = item.second->pprev;
-        if (pprev)
-            setTips.erase(pprev);
-    }
-
     setTips.insert(chainActive.Tip());
 
     int inputHeight = pblkIndex->nHeight;
-    int delta = chainActive.Height() - inputHeight;
-    int gap = 0;
-    int minGap = 100;
+    LogPrint("forks", "%s():%d - input h(%d) [%s]\n",
+        __func__, __LINE__, pblkIndex->nHeight, pblkIndex->GetBlockHash().ToString());
+
+    int delta = chainActive.Height() - inputHeight + 1;
+    if (delta >= MAX_BLOCK_AGE_FOR_FINALITY)
+    {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Old block: older than 2000!");
+    }
+
+    long int gap = 0;
+    long int minGap = LONG_MAX;
 
     // For each tip find the stemming block on the main chain
     // In case of main tip such a block would be the tip itself
     //-----------------------------------------------------------------------
-    for (const CBlockIndex* idx : setTips)
+    for (auto idx : setTips)
     {
         const int forkBaseHeight = chainActive.FindFork(idx)->nHeight;
+        LogPrint("forks", "%s():%d - processing tip h(%d) [%s] forkBaseHeight[%d]\n",
+            __func__, __LINE__, idx->nHeight, idx->GetBlockHash().ToString(), forkBaseHeight);
 
         if (forkBaseHeight < inputHeight)
         {
@@ -1606,10 +1598,15 @@ UniValue getblockfinalityindex(const JSONRPCRequest& request)
             {
                 // if forkDelay is null one still has to mine 1 block only
                 gap = forkDelay ? forkDelay : 1;
+                LogPrint("forks", "%s():%d - gap[%d], forkDelay[%d]\n", __func__, __LINE__, gap, forkDelay);
             }
             else
             {
-                gap  = chainActive.Height() - forkTipHeight + forkDelay + 1;
+                int dt = chainActive.Height() - forkTipHeight + 1;
+                dt = dt * ( dt + 1) / 2;
+
+                gap  = dt + forkDelay + 1;
+                LogPrint("forks", "%s():%d - gap[%d], forkDelay[%d], dt[%d]\n", __func__, __LINE__, gap, forkDelay, dt);
             }
         }
         else
@@ -1618,30 +1615,37 @@ UniValue getblockfinalityindex(const JSONRPCRequest& request)
             if (delta < PENALTY_THRESHOLD + 1)
             {
                 // an attacker can mine from previous block up to tip + 1
-                gap = delta + 2;
+                gap = delta + 1;
+                LogPrint("forks", "%s():%d - gap[%d], delta[%d]\n", __func__, __LINE__, gap, delta);
             }
             else
             {
                 // penalty applies
-                gap = (delta * (delta + 1) / 2) - 1;
+                gap = (delta * (delta + 1) / 2);
+                LogPrint("forks", "%s():%d - gap[%d], delta[%d]\n", __func__, __LINE__, gap, delta);
             }
         }
         minGap = std::min(minGap, gap);
     }
 
-/*
-    const int forkHeigth = chainActive.FindFork(pblkIndex)->nHeight;
-    string resp =
-        "block nHeight: " + std::to_string(inputHeight) + "\n"
-        "block delay: "   + std::to_string(pblkIndex->nChainDelay) + "\n"
-        "chainActive Height: " + std::to_string(chainActive.Height() ) + "\n"
-        "fork Heigth: " + std::to_string(forkHeigth);
-    return resp;
-*/
-    return minGap;
+    LogPrint("forks", "%s():%d - returning [%d]\n", __func__, __LINE__, minGap);
+    return (int)minGap;
 }
 
-
+UniValue getglobaltips(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 0)
+    {
+        throw std::runtime_error(
+            "getglobaltips\n"
+            "\nReturns the list of hashes of the tips of all the existing forks\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getglobaltips", "\"hash\"")
+        );
+    }
+    LOCK(cs_main);
+    return dbg_blk_global_tips();
+}
 
 static const CRPCCommand commands[] =
 { //  category              name                      actor (function)         okSafe argNames
@@ -1654,6 +1658,7 @@ static const CRPCCommand commands[] =
     { "blockchain",         "getblockhash",           &getblockhash,           true,  {"height"} },
     { "blockchain",         "getblockheader",         &getblockheader,         true,  {"blockhash","verbose"} },
     { "blockchain",         "getblockfinalityindex",  &getblockfinalityindex,  true,  {"blockhash"} },
+    { "blockchain",         "getglobaltips",          &getglobaltips,          true,  {"blockhash"} },
     { "blockchain",         "getchaintips",           &getchaintips,           true,  {} },
     { "blockchain",         "getdifficulty",          &getdifficulty,          true,  {} },
     { "blockchain",         "getmempoolancestors",    &getmempoolancestors,    true,  {"txid","verbose"} },

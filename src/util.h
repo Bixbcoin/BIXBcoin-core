@@ -58,6 +58,9 @@ extern const char * const BITCOIN_PID_FILENAME;
 
 extern std::atomic<uint32_t> logCategories;
 
+// used to get fork tips for debuging
+std::string dbg_blk_global_tips();
+
 /**
  * Translation function: Call Translate signal on UI interface, which returns a boost::optional result.
  * If no translation slot is registered, nothing is returned, and simply return the input.
