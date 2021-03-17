@@ -1,3 +1,5 @@
+// Copyright (c) 2018 The Zencash developers
+// Copyright (c) 2021 The Bixbcoin developers
 #include "pow.h"
 #include "arith_uint256.h"
 #include "primitives/block.h"

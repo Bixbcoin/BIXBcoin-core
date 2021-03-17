@@ -1,3 +1,6 @@
+// Copyright (c) 2018 The Zencash developers
+// Copyright (c) 2021 The Bixbcoin developers
+
 #include "delay.h"
 
 int64_t GetBlockDelay(const CBlockIndex& newBlock, const CBlockIndex& prevBlock, const int activeChainHeight, const bool isStartupSyncing)

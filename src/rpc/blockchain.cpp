@@ -1,5 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Bitcoin Core developers
+// Copyright (c) 2021 The Bixbcoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -1537,6 +1538,7 @@ UniValue getchaintxstats(const JSONRPCRequest& request)
 
 UniValue getblockfinalityindex(const UniValue& params, bool fHelp)
 {
+    // getblockfinalityindex - 2018 The Zencash developers
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
             "getblockfinalityindex \"hash\"\n"
