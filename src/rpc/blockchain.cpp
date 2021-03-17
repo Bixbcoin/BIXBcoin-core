@@ -1536,10 +1536,10 @@ UniValue getchaintxstats(const JSONRPCRequest& request)
 }
 
 
-UniValue getblockfinalityindex(const UniValue& params, bool fHelp)
+UniValue getblockfinalityindex(const JSONRPCRequest& request)
 {
     // getblockfinalityindex - 2018 The Zencash developers
-    if (fHelp || params.size() < 1 || params.size() > 2)
+    if (request.fHelp || request.params.size() < 1 || request.params.size() > 2)
         throw runtime_error(
             "getblockfinalityindex \"hash\"\n"
             "\nReturns the minimum number of consecutive blocks a miner should mine from now in order to revert the block of given hash\n"
@@ -1548,7 +1548,7 @@ UniValue getblockfinalityindex(const UniValue& params, bool fHelp)
         );
     LOCK(cs_main);
 
-    uint256 hash = ParseHashV(params[0], "parameter 1");
+    uint256 hash = ParseHashV(request.params[0], "parameter 1");
 
     if (mapBlockIndex.count(hash) == 0)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No such block header");
@@ -1660,9 +1660,9 @@ UniValue getblockfinalityindex(const UniValue& params, bool fHelp)
 /*
  * Can be useful when working at python scripts
  */
-UniValue dbg_log(const UniValue& params, bool fHelp)
+UniValue dbg_log(const JSONRPCRequest& request)
 {
-    if (fHelp)
+    if (request.fHelp)
     {
         throw runtime_error(
             "dbg_log\n"
@@ -1677,7 +1677,7 @@ UniValue dbg_log(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_METHOD_NOT_FOUND, "This method can only be used on regtest");
     }
 
-    std::string s = params[0].get_str();
+    std::string s = request.params[0].get_str();
     LogPrint("py", "%s() - ########## [%s] #########\n", __func__, s);
     return "Log printed";
 }
