@@ -152,28 +152,6 @@ static const int DEFAULT_STOPATHEIGHT = 0;
 /* Maximum number of heigths meaningful when looking for block finality - used for finding potential double spend */
 static const int MAX_BLOCK_AGE_FOR_FINALITY = 2000;
 
-/** Comparison function for sorting the getchaintips heads.  */
-struct CompareBlocksByHeight
-{
-    bool operator()(const CBlockIndex* a, const CBlockIndex* b) const
-    {
-        /* Make sure that unequal blocks with the same height do not compare
-           equal. Use the pointers themselves to make a distinction. */
-
-        if (a->nHeight != b->nHeight)
-          return (a->nHeight > b->nHeight);
-
-        return a < b;
-    }
-};
-
-typedef std::map<const CBlockIndex*, int, CompareBlocksByHeight> BlockTimeMap;
-extern BlockTimeMap mGlobalForkTips;
-
-typedef std::set<const CBlockIndex*, CompareBlocksByHeight> BlockSet;
-extern BlockSet sGlobalForkTips;
-static const int MAX_NUM_GLOBAL_FORKS = 3;
-
 struct BlockHasher
 {
     size_t operator()(const uint256& hash) const { return hash.GetCheapHash(); }
@@ -376,11 +354,6 @@ bool TestLockPointValidity(const LockPoints* lp);
  * See consensus/consensus.h for flag definitions.
  */
 bool CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints* lp = nullptr, bool useExistingLockPoints = false);
-
-
-bool addToGlobalForkTips(const CBlockIndex* pindex);
-int getMostRecentGlobalForkTips(std::vector<uint256>& output);
-bool updateGlobalForkTips(const CBlockIndex* pindex, bool lookForwardTips);
 
 /**
  * Closure representing one script verification

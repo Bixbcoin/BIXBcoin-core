@@ -1204,7 +1204,20 @@ UniValue getblockchaininfo(const JSONRPCRequest& request)
     return obj;
 }
 
+/** Comparison function for sorting the getchaintips heads.  */
+struct CompareBlocksByHeight
+{
+    bool operator()(const CBlockIndex* a, const CBlockIndex* b) const
+    {
+        /* Make sure that unequal blocks with the same height do not compare
+           equal. Use the pointers themselves to make a distinction. */
 
+        if (a->nHeight != b->nHeight)
+          return (a->nHeight > b->nHeight);
+
+        return a < b;
+    }
+};
 
 UniValue getchaintips(const JSONRPCRequest& request)
 {
@@ -1537,23 +1550,19 @@ UniValue getblockfinalityindex(const JSONRPCRequest& request)
 
     uint256 hash = ParseHashV(request.params[0], "parameter 1");
 
-    if (mapBlockIndex.count(hash) == 0)
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No such block header");
-
-    if (hash == Params().GetConsensus().hashGenesisBlock)
-        throw JSONRPCError(RPC_INVALID_PARAMS, "Finality does not apply to genesis block");
+        if (mapBlockIndex.count(hash) == 0)
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
 
     CBlockIndex* pblkIndex = mapBlockIndex[hash];
 
     if (fHavePruned && !(pblkIndex->nStatus & BLOCK_HAVE_DATA) && pblkIndex->nTx > 0)
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
-    /*
-    *  CBlock block;
-    *  if(!ReadBlockFromDisk(block, pblkIndex))
-            throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk (header only)");
-    */
 
-    // 0. if the input does not belong to the main chain can not tell finality
+    CBlock block;
+    if(!ReadBlockFromDisk(block, pblkIndex,Params().GetConsensus()))
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
+
+    // 0. if the input does not belong to the main chain can not ctell finality
     if (!chainActive.Contains(pblkIndex))
     {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't tell finality of a block not on main chain");
@@ -1574,16 +1583,22 @@ UniValue getblockfinalityindex(const JSONRPCRequest& request)
     int delta = chainActive.Height() - inputHeight + 1;
     if (delta >= MAX_BLOCK_AGE_FOR_FINALITY)
     {
-        throw JSONRPCError(RPC_INTERNAL_ERROR, "Old block: older than 2000!");
+        const CBlockIndex* pprev = item.second->pprev;
+        if (pprev)
+            setTips.erase(pprev);
     }
 
-    long int gap = 0;
-    long int minGap = LONG_MAX;
+    setTips.insert(chainActive.Tip());
+
+    int inputHeight = pblkIndex->nHeight;
+    int delta = chainActive.Height() - inputHeight;
+    int gap = 0;
+    int minGap = 100;
 
     // For each tip find the stemming block on the main chain
     // In case of main tip such a block would be the tip itself
     //-----------------------------------------------------------------------
-    for (auto idx : setTips)
+    for (const CBlockIndex* idx : setTips)
     {
         const int forkBaseHeight = chainActive.FindFork(idx)->nHeight;
        LogPrintf("%s():%d - processing tip h(%d) [%s] forkBaseHeight[%d]\n",
@@ -1632,20 +1647,7 @@ UniValue getblockfinalityindex(const JSONRPCRequest& request)
     return (int)minGap;
 }
 
-UniValue getglobaltips(const JSONRPCRequest& request)
-{
-    if (request.fHelp || request.params.size() != 0)
-    {
-        throw std::runtime_error(
-            "getglobaltips\n"
-            "\nReturns the list of hashes of the tips of all the existing forks\n"
-            "\nExamples:\n"
-            + HelpExampleCli("getglobaltips", "\"hash\"")
-        );
-    }
-    LOCK(cs_main);
-    return dbg_blk_global_tips();
-}
+
 
 static const CRPCCommand commands[] =
 { //  category              name                      actor (function)         okSafe argNames
@@ -1658,7 +1660,6 @@ static const CRPCCommand commands[] =
     { "blockchain",         "getblockhash",           &getblockhash,           true,  {"height"} },
     { "blockchain",         "getblockheader",         &getblockheader,         true,  {"blockhash","verbose"} },
     { "blockchain",         "getblockfinalityindex",  &getblockfinalityindex,  true,  {"blockhash"} },
-    { "blockchain",         "getglobaltips",          &getglobaltips,          true,  {"blockhash"} },
     { "blockchain",         "getchaintips",           &getchaintips,           true,  {} },
     { "blockchain",         "getdifficulty",          &getdifficulty,          true,  {} },
     { "blockchain",         "getmempoolancestors",    &getmempoolancestors,    true,  {"txid","verbose"} },
