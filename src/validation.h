@@ -149,6 +149,9 @@ static const bool DEFAULT_PEERBLOOMFILTERS = true;
 /** Default for -stopatheight */
 static const int DEFAULT_STOPATHEIGHT = 0;
 
+/* Maximum number of heigths meaningful when looking for block finality - used for finding potential double spend */
+static const int MAX_BLOCK_AGE_FOR_FINALITY = 2000;
+
 struct BlockHasher
 {
     size_t operator()(const uint256& hash) const { return hash.GetCheapHash(); }
