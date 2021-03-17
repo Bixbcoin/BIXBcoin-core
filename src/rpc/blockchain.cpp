@@ -1568,7 +1568,7 @@ UniValue getblockfinalityindex(const JSONRPCRequest& request)
     setTips.insert(chainActive.Tip());
 
     int inputHeight = pblkIndex->nHeight;
-    LogPrint("forks", "%s():%d - input h(%d) [%s]\n",
+    LogPrintf("%s():%d - input h(%d) [%s]\n",
         __func__, __LINE__, pblkIndex->nHeight, pblkIndex->GetBlockHash().ToString());
 
     int delta = chainActive.Height() - inputHeight + 1;
@@ -1586,7 +1586,7 @@ UniValue getblockfinalityindex(const JSONRPCRequest& request)
     for (auto idx : setTips)
     {
         const int forkBaseHeight = chainActive.FindFork(idx)->nHeight;
-        LogPrint("forks", "%s():%d - processing tip h(%d) [%s] forkBaseHeight[%d]\n",
+       LogPrintf("%s():%d - processing tip h(%d) [%s] forkBaseHeight[%d]\n",
             __func__, __LINE__, idx->nHeight, idx->GetBlockHash().ToString(), forkBaseHeight);
 
         if (forkBaseHeight < inputHeight)
@@ -1598,7 +1598,7 @@ UniValue getblockfinalityindex(const JSONRPCRequest& request)
             {
                 // if forkDelay is null one still has to mine 1 block only
                 gap = forkDelay ? forkDelay : 1;
-                LogPrint("forks", "%s():%d - gap[%d], forkDelay[%d]\n", __func__, __LINE__, gap, forkDelay);
+               LogPrintf("%s():%d - gap[%d], forkDelay[%d]\n", __func__, __LINE__, gap, forkDelay);
             }
             else
             {
@@ -1606,7 +1606,7 @@ UniValue getblockfinalityindex(const JSONRPCRequest& request)
                 dt = dt * ( dt + 1) / 2;
 
                 gap  = dt + forkDelay + 1;
-                LogPrint("forks", "%s():%d - gap[%d], forkDelay[%d], dt[%d]\n", __func__, __LINE__, gap, forkDelay, dt);
+               LogPrintf("%s():%d - gap[%d], forkDelay[%d], dt[%d]\n", __func__, __LINE__, gap, forkDelay, dt);
             }
         }
         else
@@ -1616,19 +1616,19 @@ UniValue getblockfinalityindex(const JSONRPCRequest& request)
             {
                 // an attacker can mine from previous block up to tip + 1
                 gap = delta + 1;
-                LogPrint("forks", "%s():%d - gap[%d], delta[%d]\n", __func__, __LINE__, gap, delta);
+               LogPrintf("%s():%d - gap[%d], delta[%d]\n", __func__, __LINE__, gap, delta);
             }
             else
             {
                 // penalty applies
                 gap = (delta * (delta + 1) / 2);
-                LogPrint("forks", "%s():%d - gap[%d], delta[%d]\n", __func__, __LINE__, gap, delta);
+               LogPrintf("%s():%d - gap[%d], delta[%d]\n", __func__, __LINE__, gap, delta);
             }
         }
         minGap = std::min(minGap, gap);
     }
 
-    LogPrint("forks", "%s():%d - returning [%d]\n", __func__, __LINE__, minGap);
+   LogPrintf("%s():%d - returning [%d]\n", __func__, __LINE__, minGap);
     return (int)minGap;
 }
 
