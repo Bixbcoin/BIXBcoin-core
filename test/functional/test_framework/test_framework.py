@@ -392,7 +392,7 @@ class BitcoinTestFramework(object):
             # Create cache directories, run bitcoinds:
             for i in range(MAX_NODES):
                 datadir = initialize_datadir(self.options.cachedir, i)
-                args = [os.getenv("LITECOIND", "bixbcoind"), "-server", "-keypool=1", "-datadir=" + datadir, "-discover=0"]
+                args = [os.getenv("BIXBCOIND", "bixbcoind"), "-server", "-keypool=1", "-datadir=" + datadir, "-discover=0"]
                 if i > 0:
                     args.append("-connect=127.0.0.1:" + str(p2p_port(0)))
                 self.nodes.append(TestNode(i, self.options.cachedir, extra_args=[], rpchost=None, timewait=None, binary=None, stderr=None, mocktime=self.mocktime, coverage_dir=None))
@@ -460,10 +460,10 @@ class ComparisonTestFramework(BitcoinTestFramework):
 
     def add_options(self, parser):
         parser.add_option("--testbinary", dest="testbinary",
-                          default=os.getenv("LITECOIND", "bixbcoind"),
+                          default=os.getenv("BIXBCOIND", "bixbcoind"),
                           help="bixbcoind binary to test")
         parser.add_option("--refbinary", dest="refbinary",
-                          default=os.getenv("LITECOIND", "bixbcoind"),
+                          default=os.getenv("BIXBCOIND", "bixbcoind"),
                           help="bixbcoind binary to use for reference nodes (if any)")
 
     def setup_network(self):

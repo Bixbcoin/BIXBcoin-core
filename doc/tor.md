@@ -1,4 +1,4 @@
-TOR SUPPORT IN LITECOIN
+TOR SUPPORT IN BIXBCOIN
 ======================
 
 It is possible to run Bixbcoin as a Tor hidden service, and connect to such services.

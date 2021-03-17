@@ -168,10 +168,10 @@ Berkeley DB
 It is recommended to use Berkeley DB 4.8. If you have to build it yourself:
 
 ```bash
-LITECOIN_ROOT=$(pwd)
+BIXBCOIN_ROOT=$(pwd)
 
 # Pick some path to install BDB to, here we create a directory within the bixbcoin directory
-BDB_PREFIX="${LITECOIN_ROOT}/db4"
+BDB_PREFIX="${BIXBCOIN_ROOT}/db4"
 mkdir -p $BDB_PREFIX
 
 # Fetch the source and verify that it is not tampered with
@@ -187,7 +187,7 @@ cd db-4.8.30.NC/build_unix/
 make install
 
 # Configure Bixbcoin Core to use our own-built instance of BDB
-cd $LITECOIN_ROOT
+cd $BIXBCOIN_ROOT
 ./autogen.sh
 ./configure LDFLAGS="-L${BDB_PREFIX}/lib/" CPPFLAGS="-I${BDB_PREFIX}/include/" # (other args...)
 ```
