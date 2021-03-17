@@ -1550,102 +1550,114 @@ UniValue getblockfinalityindex(const JSONRPCRequest& request)
 
     uint256 hash = ParseHashV(request.params[0], "parameter 1");
 
-        if (mapBlockIndex.count(hash) == 0)
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
+    if (mapBlockIndex.count(hash) == 0)
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No such block header");
+
+    if (hash == Params().GetConsensus().hashGenesisBlock)
+        throw JSONRPCError(RPC_INVALID_PARAMS, "Finality does not apply to genesis block");
 
     CBlockIndex* pblkIndex = mapBlockIndex[hash];
 
     if (fHavePruned && !(pblkIndex->nStatus & BLOCK_HAVE_DATA) && pblkIndex->nTx > 0)
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
+/*
+ *  CBlock block;
+ *  if(!ReadBlockFromDisk(block, pblkIndex))
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk (header only)");
+ */
 
-    CBlock block;
-    if(!ReadBlockFromDisk(block, pblkIndex,Params().GetConsensus()))
-        throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
-
-    // 0. if the input does not belong to the main chain can not ctell finality
+    // 0. if the input does not belong to the main chain can not tell finality
     if (!chainActive.Contains(pblkIndex))
     {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't tell finality of a block not on main chain");
     }
 
-    std::set<const CBlockIndex*, CompareBlocksByHeight> setTips;    
+    std::set<const CBlockIndex*, CompareBlocksByHeight> setTips;
     for (const std::pair<const uint256, CBlockIndex*>& mapPair : mapBlockIndex)
     {
         const CBlockIndex* idx = mapPair.second;
         setTips.insert(idx);
     }
+    
     setTips.insert(chainActive.Tip());
 
     int inputHeight = pblkIndex->nHeight;
-    LogPrintf("%s():%d - input h(%d) [%s]\n",
+    LogPrintf( "%s():%d - input h(%d) [%s]\n",
         __func__, __LINE__, pblkIndex->nHeight, pblkIndex->GetBlockHash().ToString());
 
-    int delta = chainActive.Height() - inputHeight + 1;
+    int64_t delta = chainActive.Height() - inputHeight + 1;
     if (delta >= MAX_BLOCK_AGE_FOR_FINALITY)
     {
-        const CBlockIndex* pprev = item.second->pprev;
-        if (pprev)
-            setTips.erase(pprev);
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Old block: older than 2000!");
     }
 
-    setTips.insert(chainActive.Tip());
-
-    int inputHeight = pblkIndex->nHeight;
-    int delta = chainActive.Height() - inputHeight;
-    int gap = 0;
-    int minGap = 100;
+    int64_t gap = 0;
+    int64_t minGap = LLONG_MAX;
 
     // For each tip find the stemming block on the main chain
     // In case of main tip such a block would be the tip itself
     //-----------------------------------------------------------------------
-    for (const CBlockIndex* idx : setTips)
+    for (auto idx : setTips)
     {
+        const int forkTipHeight = idx->nHeight;
         const int forkBaseHeight = chainActive.FindFork(idx)->nHeight;
-       LogPrintf("%s():%d - processing tip h(%d) [%s] forkBaseHeight[%d]\n",
+
+        LogPrintf( "%s():%d - processing tip h(%d) [%s] forkBaseHeight[%d]\n",
             __func__, __LINE__, idx->nHeight, idx->GetBlockHash().ToString(), forkBaseHeight);
+
+        // during a node's life, there might be many tips in the container, it is not useful
+        // keeping all of them into account for calculating the finality, just consider the most recent ones.
+        // Blocks are ordered by heigth, stop if we exceed a safe limit in depth, lets say the max age
+        if ( (chainActive.Height() - forkTipHeight) >=  MAX_BLOCK_AGE_FOR_FINALITY )
+        {
+            LogPrintf( "%s():%d - exiting loop on tips, max age reached: forkBaseHeight[%d], chain[%d]\n",
+                __func__, __LINE__, forkBaseHeight, chainActive.Height());
+            break;
+        }
 
         if (forkBaseHeight < inputHeight)
         {
-            // if the fork is older than the input, it also depends on the current penalty ongoing on the fork
-            int forkDelay  = idx->nChainDelay;
-            int forkTipHeight = idx->nHeight;
+            // if the fork base is older than the input block, finality also depends on the current penalty
+            // ongoing on the fork
+            int64_t forkDelay  = idx->nChainDelay;
             if (forkTipHeight >= chainActive.Height())
             {
-                // if forkDelay is null one still has to mine 1 block only
+                // if forkDelay is null one has to mine 1 block only
                 gap = forkDelay ? forkDelay : 1;
-               LogPrintf("%s():%d - gap[%d], forkDelay[%d]\n", __func__, __LINE__, gap, forkDelay);
+                LogPrintf( "%s():%d - gap[%d], forkDelay[%d]\n", __func__, __LINE__, gap, forkDelay);
             }
             else
             {
-                int dt = chainActive.Height() - forkTipHeight + 1;
+                int64_t dt = chainActive.Height() - forkTipHeight + 1;
                 dt = dt * ( dt + 1) / 2;
 
                 gap  = dt + forkDelay + 1;
-               LogPrintf("%s():%d - gap[%d], forkDelay[%d], dt[%d]\n", __func__, __LINE__, gap, forkDelay, dt);
+                LogPrintf( "%s():%d - gap[%d], forkDelay[%d], dt[%d]\n", __func__, __LINE__, gap, forkDelay, dt);
             }
         }
         else
         {
-            // this also handle the main chain tip
+            // this also handles the main chain tip
             if (delta < PENALTY_THRESHOLD + 1)
             {
                 // an attacker can mine from previous block up to tip + 1
                 gap = delta + 1;
-               LogPrintf("%s():%d - gap[%d], delta[%d]\n", __func__, __LINE__, gap, delta);
+                LogPrintf( "%s():%d - gap[%d], delta[%d]\n", __func__, __LINE__, gap, delta);
             }
             else
             {
                 // penalty applies
                 gap = (delta * (delta + 1) / 2);
-               LogPrintf("%s():%d - gap[%d], delta[%d]\n", __func__, __LINE__, gap, delta);
+                LogPrintf( "%s():%d - gap[%d], delta[%d]\n", __func__, __LINE__, gap, delta);
             }
         }
         minGap = std::min(minGap, gap);
     }
 
-   LogPrintf("%s():%d - returning [%d]\n", __func__, __LINE__, minGap);
-    return (int)minGap;
+    LogPrintf( "%s():%d - returning [%d]\n", __func__, __LINE__, minGap);
+    return minGap;
 }
+
 
 
 
