@@ -38,6 +38,7 @@ if [ "${BITCOIN_GENBUILD_NO_GIT}" != "1" -a -e "$(which git 2>/dev/null)" -a "$(
     git diff-index --quiet HEAD -- || SUFFIX="$SUFFIX-dirty"
 fi
 
+
 if [ -n "$DESC" ]; then
     NEWINFO="#define BUILD_DESC \"$DESC\""
 elif [ -n "$SUFFIX" ]; then
@@ -50,3 +51,4 @@ fi
 if [ "$INFO" != "$NEWINFO" ]; then
     echo "$NEWINFO" >"$FILE"
 fi
+# file COPYING or http://www.opensource.org/licenses/mit-license.php.
